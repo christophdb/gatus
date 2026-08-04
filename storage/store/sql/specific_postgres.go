@@ -123,8 +123,9 @@ func (s *Store) createPostgresSchema() error {
 	// Add new state columns
 	_, _ = s.db.Exec(`ALTER TABLE endpoint_results ADD IF NOT EXISTS state TEXT NOT NULL DEFAULT 'MIGRATION#1457'`)
 	_, _ = s.db.Exec(`ALTER TABLE endpoint_events ADD IF NOT EXISTS event_state TEXT NOT NULL DEFAULT 'MIGRATION#1457'`)
+	// Replace unknown default values with healthy if success is true else unhealthy
 	_, _ = s.db.Exec(`UPDATE endpoint_results SET state = CASE WHEN success = TRUE THEN 'healthy' ELSE 'unhealthy' END WHERE state = 'MIGRATION#1457'`)
-	_, _ = s.db.Exec(`UPDATE endpoint_events SET event_state = CASE WHEN event_type = 'HEALTHY' THEN 'healthy' WHEN event_type = 'UNHEALTHY' THEN 'unhealthy' ELSE event_state = 'undefined' END WHERE event_state = 'MIGRATION#1457'`)
+	_, _ = s.db.Exec(`UPDATE endpoint_events SET event_state = CASE WHEN event_type = 'HEALTHY' THEN 'healthy' WHEN event_type = 'UNHEALTHY' THEN 'unhealthy' ELSE '' END WHERE event_state = 'MIGRATION#1457'`)
 	// Add suite_result_id to endpoint_results table for suite endpoint linkage
 	_, _ = s.db.Exec(`ALTER TABLE endpoint_results ADD COLUMN IF NOT EXISTS suite_result_id BIGINT REFERENCES suite_results(suite_result_id) ON DELETE CASCADE`)
 	// Create index for suite_result_id
